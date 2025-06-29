@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tts-backend
+  namespace: sesame-tts
+  labels:
+    app: tts-backend
+spec:
+  replicas: 1  # Single replica for model consistency
+  selector:
+    matchLabels:
+      app: tts-backend
+  template:
+    metadata:
+      labels:
+        app: tts-backend
+    spec:
+      containers:
+      - name: tts-backend
+        image: sesame/tts-backend:latest
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: tts-config
+        volumeMounts:
+        - name: tts-models
+          mountPath: /app/models
+        - name: tts-audio
+          mountPath: /app/audio_files
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: tts-models
+        persistentVolumeClaim:
+          claimName: tts-models-pvc
+      - name: tts-audio
+        persistentVolumeClaim:
+          claimName: tts-audio-pvc
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tts-backend-service
+  namespace: sesame-tts
+  labels:
+    app: tts-backend
+spec:
+  selector:
+    app: tts-backend
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: ClusterIP

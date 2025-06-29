@@ -8,7 +8,13 @@
     "preview": "astro preview",
     "astro": "astro",
     "backend": "npx bknd run",
-    "dev:full": "concurrently \"npm run backend\" \"npm run dev\""
+    "dev:full": "concurrently \"npm run backend\" \"npm run dev\"",
+    "docker:build": "./scripts/build.sh",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "k8s:deploy": "./scripts/k8s-deploy.sh",
+    "k8s:cleanup": "./scripts/k8s-cleanup.sh"
   },
   "dependencies": {
     "@tailwindcss/cli": "^4.0.0",

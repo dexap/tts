@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  tts-backend:
+    build:
+      context: .
+      dockerfile: docker/tts-backend/Dockerfile
+    container_name: sesame-tts-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - tts-models:/app/models
+      - tts-audio:/app/audio_files
+    environment:
+      - PYTHONPATH=/app
+      - TTS_MODEL_DIR=/app/models
+      - FLASK_ENV=production
+    networks:
+      - sesame-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    container_name: sesame-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - tts-backend
+    networks:
+      - sesame-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  sesame-network:
+    driver: bridge
+
+volumes:
+  tts-models:
+    driver: local
+  tts-audio:
+    driver: local
